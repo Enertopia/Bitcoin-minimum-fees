@@ -1,0 +1,51 @@
+from bitcoinlib.wallets import wallet_create_or_open
+from bitcoinlib.transactions import Transaction, TxOutput, Script, SegwitSPK
+from bitcoinlib.services import esplora
+
+class TitleChain:
+    def __init__(self, wallet_name, network="mainnet"):
+        self.wallet_name = wallet_name
+        self.network = network
+
+    def estimate_optimal_fee_rate(self):
+        # Use Esplora to estimate the current fee rate
+        base_fee_rate = esplora.EstimateFee()
+
+        # Optimize for lower fees
+        optimal_fee_rate = base_fee_rate * 0.6  # Adjust for optimization
+
+        return optimal_fee_rate
+
+    def anchor_to_bitcoin(self, data_list):
+        try:
+            # Get the optimal fee rate
+            fee_rate = self.estimate_optimal_fee_rate()
+
+            # Create a Bitcoin transaction with SegWit output and data entries
+            tx = Transaction(fee_rate=fee_rate)
+
+            # Add SegWit output and data entries efficiently
+            for data in data_list:
+                tx.add_output(TxOutput(script_pubkey=SegwitSPK("OP_0 OP_PUSHDATA1 <pubkey>")))
+                tx.add_data_output(data, 'nulldata')
+
+            # Sign and broadcast the transaction
+            wallet = wallet_create_or_open(self.wallet_name, network=self.network)
+            tx.sign(wallet=wallet).send()
+
+            return tx.id
+
+        except Exception as e:
+            raise ValueError(f"Error anchoring data to Bitcoin: {str(e)}")
+
+# Usage example:
+try:
+    wallet_name, data_entries = "YOUR_WALLET_NAME", ["DATA_ENTRY_1", "DATA_ENTRY_2", "DATA_ENTRY_3"]
+    title_chain = TitleChain(wallet_name)
+    transaction_id = title_chain.anchor_to_bitcoin(data_entries)
+    print(f"Data anchored successfully. Transaction ID: {transaction_id}")
+
+except ValueError as ve:
+    print(f"Error: {str(ve)}")
+
+# Code by Emiliano German Solazzi Griminger (November 2023)
