@@ -1,0 +1,70 @@
+"""
+Bitcoin Anchoring Service
+
+Copyright © 2023 Emiliano German Solazzi Griminger
+
+All rights reserved. This software is the property of Emiliano German Solazzi Griminger.
+Unauthorized use, modification, or distribution of this software is prohibited.
+For authorization and inquiries, please contact the original coder.
+
+Permission is hereby granted to use, copy, modify, and distribute this software
+for educational, non-commercial, and personal use, provided that the following
+conditions are met:
+
+1. Attribution: Users must give appropriate credit to Emiliano German Solazzi Griminger.
+2. Notification: Users are required to notify the original coder of any usage or modifications.
+
+For any other use, please contact the original coder for explicit authorization.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+"""
+
+from typing import List
+import concurrent.futures
+
+class AnchoringService:
+    def __init__(self):
+        self.cache = {}  # Cache fee rates
+        self.executor = concurrent.futures.ThreadPoolExecutor()
+
+    def get_fee_rate(self) -> int:
+        """Get the fee rate, caching if not already cached."""
+        if 'feeRate' in self.cache:
+            return self.cache['feeRate']
+
+        fee_rate = api.get_fees()  # Assuming there is an 'api' object
+        self.cache['feeRate'] = fee_rate
+
+        return fee_rate
+
+    def anchor_data(self, data: List[str]) -> str:
+        """Anchor data to the Bitcoin blockchain."""
+        # Input validation
+        if not data:
+            raise ValueError('No data provided for anchoring.')
+
+        future = self.executor.submit(self._add_entries, data)
+        return future.result()
+
+    def _add_entries(self, data: List[str]) -> str:
+        """Add data entries to a Bitcoin transaction and broadcast."""
+        fee_rate = self.get_fee_rate()
+        tx = Transaction(fee_rate=fee_rate)
+
+        for entry in data:
+            tx.add_entry(entry)
+
+        tx_id = tx.broadcast()  # Handles signing
+
+        return tx_id
+
+# Usage
+data = ['entry1', 'entry2']
+service = AnchoringService()
+tx_id = service.anchor_data(data)
