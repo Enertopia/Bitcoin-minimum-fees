@@ -4,7 +4,8 @@ from bitcoinlib.transactions import Transaction
 import bisect
 import logging
 
-# Assuming you have a configured HDWallet class with proper permissions
+MAX_TX = 1000  # Maximum transaction size
+
 class CustomHDWallet(HDWallet):
     # Implement your HDWallet class with necessary configuration and permissions
     pass
@@ -84,7 +85,6 @@ class AnchoringService:
             logging.error(f"Error sending transactions: {e}")
             # Handle the error appropriately, e.g., logging or raising a custom exception
 
-# Additional Customization Options
 class BatchOptimizer:
     """
     Optimizes batch processing for Bitcoin transactions.
@@ -124,7 +124,6 @@ class BatchOptimizer:
 
         for size in self.sorted_batches:
             if tx_size + size > max_tx_size:
-                # New transaction
                 fees += curr_tx.fee
                 curr_tx = Transaction()
 
@@ -132,12 +131,10 @@ class BatchOptimizer:
                 curr_tx.add_batch(get_next_batch(size))  # Assuming get_next_batch is defined
             except Exception as e:
                 logging.error(f"Error adding batch to transaction: {e}")
-                # Handle the error appropriately, e.g., logging or raising a custom exception
                 continue
 
             tx_size += size
 
-        # Final current tx
         fees += curr_tx.fee
 
         return fees
