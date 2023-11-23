@@ -62,7 +62,7 @@ class AnchoringService:
 
         return tx
 
-    def anchor_batches(self, data_batches: list):
+    def anchor_batches(self, data_batches: list) -> None:
         """
         Anchors multiple data batches as Bitcoin transactions.
 
@@ -103,7 +103,7 @@ class BatchOptimizer:
         """
         self.sorted_batches = []  # Sorted by size
 
-    def add_batch(self, batch: list):
+    def add_batch(self, batch: list) -> None:
         """
         Adds a batch to the optimizer.
 
@@ -171,3 +171,6 @@ class TestBatchOptimizer(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+# Copyright (c) 2023 Emiliano German Solazzi Griminger
+
