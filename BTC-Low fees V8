@@ -1,0 +1,92 @@
+# Robust Bitcoin Batch Anchoring
+# Copyright 2023 Emiliano German Solazzi Griminger
+
+import time
+import logging
+from concurrent.futures import ThreadPoolExecutor
+from bitcoinlib.wallets import HDWallet
+from bitcoinlib.transactions import Transaction
+
+class RateLimitedWallet:
+
+    def __init__(self, min_interval=1):
+        self.last_send = 0
+        self.min_interval = min_interval
+
+    def send_transaction(self, tx):
+        """
+        Sends a transaction with rate limiting.
+
+        Parameters:
+            tx (Transaction): The transaction to be sent.
+        """
+        current_time = time.time()
+        elapsed_time = current_time - self.last_send
+
+        if elapsed_time < self.min_interval:
+            time.sleep(self.min_interval - elapsed_time)
+
+        # Simulate sending the transaction
+        # self.wallet.send_transaction(tx)
+        self.last_send = time.time()
+
+class AnchoringService:
+
+    MAX_ENTRIES = 100
+
+    def __init__(self, wallet: HDWallet, min_interval=1):
+        """
+        Initializes the AnchoringService.
+
+        Parameters:
+            wallet (HDWallet): The Bitcoin wallet to be used for transactions.
+            min_interval (int): Minimum interval between transactions.
+        """
+        self.executor = ThreadPoolExecutor(max_workers=5)
+        self.wallet = RateLimitedWallet(min_interval)
+
+    @staticmethod
+    def validate_entries(entries: list):
+        """
+        Validates the number of entries.
+
+        Parameters:
+            entries (list): List of entries to be validated.
+
+        Raises:
+            ValueError: If the number of entries exceeds MAX_ENTRIES.
+        """
+        if len(entries) > AnchoringService.MAX_ENTRIES:
+            raise ValueError(f"Number of entries exceeds {AnchoringService.MAX_ENTRIES}")
+
+    def prepare_transaction(self, entries: list) -> Transaction:
+        """
+        Prepares a Bitcoin transaction.
+
+        Parameters:
+            entries (list): List of data entries to be included in the transaction.
+
+        Returns:
+            Transaction: The created Bitcoin transaction.
+        """
+        AnchoringService.validate_entries(entries)
+
+        tx = Transaction()
+        # Construction logic...
+
+        return tx
+
+    def send_with_retry(self, tx: Transaction):
+        """
+        Sends a transaction with retry logic in case of failure.
+
+        Parameters:
+            tx (Transaction): The transaction to be sent.
+        """
+        try:
+            self.wallet.send_transaction(tx)
+
+        except Exception as e:
+            logging.error("Transaction failed, retrying...", exc_info=True)
+            time.sleep(5)  # Wait before retry
+            self.send_with_retry(tx)
