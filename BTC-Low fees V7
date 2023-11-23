@@ -1,11 +1,11 @@
-# anchorservice.py
+# anchoring_service.py
 
-import bisect
 import logging
-import unittest
 from concurrent.futures import ThreadPoolExecutor
 from bitcoinlib.wallets import HDWallet
 from bitcoinlib.transactions import Transaction
+import bisect
+import unittest
 
 MAX_TRANSACTION_SIZE = 1000  # Maximum transaction size
 
@@ -76,7 +76,7 @@ class AnchoringService:
             try:
                 tx = self.wallet.sign_transaction(tx)
             except Exception as e:
-                logging.error(f"Error signing transaction: {e}")
+                logging.error(f"Error signing transaction for batch {batch}: {e}")
                 # Handle the error appropriately, e.g., logging or raising a custom exception
                 continue
 
@@ -88,12 +88,6 @@ class AnchoringService:
             logging.error(f"Error sending transactions: {e}")
             # Handle the error appropriately, e.g., logging or raising a custom exception
 
-# batchoptimizer.py
-
-import bisect
-import logging
-import unittest
-from bitcoinlib.transactions import Transaction
 
 class BatchOptimizer:
     """
@@ -138,7 +132,8 @@ class BatchOptimizer:
                 current_transaction = Transaction()
 
             try:
-                current_transaction.add_batch(get_next_batch(size))  # Assuming get_next_batch is defined
+                # Assuming get_next_batch is defined
+                current_transaction.add_batch(get_next_batch(size))
             except Exception as e:
                 logging.error(f"Error adding batch to transaction: {e}")
                 continue
@@ -149,33 +144,30 @@ class BatchOptimizer:
 
         return fees
 
-# tests.py
-
-import unittest
-from anchorservice import AnchoringService, CustomHDWallet
-from batchoptimizer import BatchOptimizer
 
 class TestAnchoringService(unittest.TestCase):
-    def test_get_adjusted_fee_rate(self):
-        # Test the get_adjusted_fee_rate method
+    def test_get_adjusted_fee_rate(self) -> None:
+        # Implement meaningful assertions for get_adjusted_fee_rate
         pass
 
-    def test_create_transaction(self):
-        # Test the create_transaction method
+    def test_create_transaction(self) -> None:
+        # Implement meaningful assertions for create_transaction
         pass
 
-    def test_anchor_batches(self):
-        # Test the anchor_batches method
+    def test_anchor_batches(self) -> None:
+        # Implement meaningful assertions for anchor_batches
         pass
+
 
 class TestBatchOptimizer(unittest.TestCase):
-    def test_add_batch(self):
-        # Test the add_batch method of BatchOptimizer
+    def test_add_batch(self) -> None:
+        # Implement meaningful assertions for add_batch
         pass
 
-    def test_optimize(self):
-        # Test the optimize method of BatchOptimizer
+    def test_optimize(self) -> None:
+        # Implement meaningful assertions for optimize
         pass
+
 
 if __name__ == '__main__':
     unittest.main()
