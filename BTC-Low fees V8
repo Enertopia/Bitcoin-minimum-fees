@@ -1,9 +1,3 @@
-"""
-Bitcoin Batch Anchoring Service with Batch Optimizer
-
-Copyright (c) 2023 Emiliano German Solazzi Griminger
-"""
-
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -108,7 +102,9 @@ class BatchOptimizer:
                 current_transaction = Transaction()
 
             try:
-                current_transaction.add_batch(get_next_batch(size))  # Replace with actual implementation
+                # Replace with actual implementation of get_next_batch
+                next_batch = get_next_batch(size)
+                current_transaction.add_batch(next_batch)
             except Exception as e:
                 logging.error(f"Error adding batch to transaction: {e}")
                 raise
