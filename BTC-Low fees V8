@@ -5,6 +5,7 @@ Copyright (c) 2023 Emiliano German Solazzi Griminger
 """
 
 import logging
+import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
 from bitcoinlib.wallets import HDWallet
@@ -29,9 +30,14 @@ class RateLimitedWallet:
         if elapsed_time < self.min_interval:
             time.sleep(self.min_interval - elapsed_time)
 
-        # Simulate sending the transaction
-        # self.wallet.send_transaction(tx)
-        self.last_send = time.time()
+        try:
+            # Simulate sending the transaction
+            # self.wallet.send_transaction(tx)
+            self.last_send = time.time()
+            logging.info("Transaction sent successfully.")
+        except Exception as e:
+            logging.error(f"Error sending transaction: {e}")
+            raise
 
 class AnchoringService:
     def __init__(self, wallet: CustomHDWallet):
@@ -40,17 +46,25 @@ class AnchoringService:
         self.cache = {}
 
     def get_adjusted_fee_rate(self) -> float:
-        return self.wallet.get_fee_rate() * 0.8
+        try:
+            return self.wallet.get_fee_rate() * 0.8
+        except Exception as e:
+            logging.error(f"Error getting fee rate: {e}")
+            raise
 
     def create_transaction(self, data_batch: List) -> Transaction:
         entries = []
-        fee_rate = self.get_adjusted_fee_rate()
-        tx = Transaction(fee_rate=fee_rate)
+        try:
+            fee_rate = self.get_adjusted_fee_rate()
+            tx = Transaction(fee_rate=fee_rate)
 
-        for entry in data_batch:
-            entries.append(tx.add_entry(entry))
+            for entry in data_batch:
+                entries.append(tx.add_entry(entry))
 
-        return tx
+            return tx
+        except Exception as e:
+            logging.error(f"Error creating transaction: {e}")
+            raise
 
     def anchor_batches(self, data_batches: List):
         batch_transactions = []
@@ -59,23 +73,29 @@ class AnchoringService:
             tx = self.create_transaction(batch)
             try:
                 tx = self.wallet.sign_transaction(tx)
+                batch_transactions.append(tx)
             except Exception as e:
                 logging.error(f"Error signing transaction: {e}")
-                raise  # Reraise the exception for better debugging
-            batch_transactions.append(tx)
+                raise
 
         try:
             self.wallet.send_transactions(batch_transactions)
+            logging.info("Batch transactions sent successfully.")
         except Exception as e:
-            logging.error(f"Error sending transactions: {e}")
-            raise  # Reraise the exception for better debugging
+            logging.error(f"Error sending batch transactions: {e}")
+            raise
 
 class BatchOptimizer:
     def __init__(self):
         self.sorted_batches = []  # Sorted by size
 
     def add_batch(self, batch: List):
-        bisect.insort(self.sorted_batches, len(batch))  # Inserts in sorted order
+        try:
+            bisect.insort(self.sorted_batches, len(batch))  # Inserts in sorted order
+            logging.info("Batch added successfully.")
+        except Exception as e:
+            logging.error(f"Error adding batch: {e}")
+            raise
 
     def optimize(self, max_transaction_size=MAX_TRANSACTION_SIZE) -> float:
         fees = 0
@@ -91,7 +111,7 @@ class BatchOptimizer:
                 current_transaction.add_batch(get_next_batch(size))  # Replace with actual implementation
             except Exception as e:
                 logging.error(f"Error adding batch to transaction: {e}")
-                raise  # Reraise the exception for better debugging
+                raise
 
             current_transaction_size += size
 
