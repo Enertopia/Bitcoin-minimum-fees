@@ -1,25 +1,28 @@
-# Robust Bitcoin Batch Anchoring
-# Copyright 2023 Emiliano German Solazzi Griminger
+"""
+Bitcoin Batch Anchoring Service with Batch Optimizer
 
-import time
+Copyright (c) 2023 Emiliano German Solazzi Griminger
+"""
+
 import logging
 from concurrent.futures import ThreadPoolExecutor
+from typing import List
 from bitcoinlib.wallets import HDWallet
 from bitcoinlib.transactions import Transaction
+import bisect
+
+MAX_TRANSACTION_SIZE = 1000  # Maximum transaction size
+
+class CustomHDWallet(HDWallet):
+    """Custom HDWallet class with necessary configuration and permissions."""
+    pass
 
 class RateLimitedWallet:
-
     def __init__(self, min_interval=1):
         self.last_send = 0
         self.min_interval = min_interval
 
-    def send_transaction(self, tx):
-        """
-        Sends a transaction with rate limiting.
-
-        Parameters:
-            tx (Transaction): The transaction to be sent.
-        """
+    def send_transaction(self, tx: Transaction):
         current_time = time.time()
         elapsed_time = current_time - self.last_send
 
@@ -31,62 +34,69 @@ class RateLimitedWallet:
         self.last_send = time.time()
 
 class AnchoringService:
+    def __init__(self, wallet: CustomHDWallet):
+        self.executor = ThreadPoolExecutor()
+        self.wallet = RateLimitedWallet()
+        self.cache = {}
 
-    MAX_ENTRIES = 100
+    def get_adjusted_fee_rate(self) -> float:
+        return self.wallet.get_fee_rate() * 0.8
 
-    def __init__(self, wallet: HDWallet, min_interval=1):
-        """
-        Initializes the AnchoringService.
+    def create_transaction(self, data_batch: List) -> Transaction:
+        entries = []
+        fee_rate = self.get_adjusted_fee_rate()
+        tx = Transaction(fee_rate=fee_rate)
 
-        Parameters:
-            wallet (HDWallet): The Bitcoin wallet to be used for transactions.
-            min_interval (int): Minimum interval between transactions.
-        """
-        self.executor = ThreadPoolExecutor(max_workers=5)
-        self.wallet = RateLimitedWallet(min_interval)
-
-    @staticmethod
-    def validate_entries(entries: list):
-        """
-        Validates the number of entries.
-
-        Parameters:
-            entries (list): List of entries to be validated.
-
-        Raises:
-            ValueError: If the number of entries exceeds MAX_ENTRIES.
-        """
-        if len(entries) > AnchoringService.MAX_ENTRIES:
-            raise ValueError(f"Number of entries exceeds {AnchoringService.MAX_ENTRIES}")
-
-    def prepare_transaction(self, entries: list) -> Transaction:
-        """
-        Prepares a Bitcoin transaction.
-
-        Parameters:
-            entries (list): List of data entries to be included in the transaction.
-
-        Returns:
-            Transaction: The created Bitcoin transaction.
-        """
-        AnchoringService.validate_entries(entries)
-
-        tx = Transaction()
-        # Construction logic...
+        for entry in data_batch:
+            entries.append(tx.add_entry(entry))
 
         return tx
 
-    def send_with_retry(self, tx: Transaction):
-        """
-        Sends a transaction with retry logic in case of failure.
+    def anchor_batches(self, data_batches: List):
+        batch_transactions = []
 
-        Parameters:
-            tx (Transaction): The transaction to be sent.
-        """
+        for batch in data_batches:
+            tx = self.create_transaction(batch)
+            try:
+                tx = self.wallet.sign_transaction(tx)
+            except Exception as e:
+                logging.error(f"Error signing transaction: {e}")
+                raise  # Reraise the exception for better debugging
+            batch_transactions.append(tx)
+
         try:
-            self.wallet.send_transaction(tx)
-
+            self.wallet.send_transactions(batch_transactions)
         except Exception as e:
-            logging.error("Transaction failed, retrying...", exc_info=True)
-            time.sleep(5)  # Wait before retry
-            self.send_with_retry(tx)
+            logging.error(f"Error sending transactions: {e}")
+            raise  # Reraise the exception for better debugging
+
+class BatchOptimizer:
+    def __init__(self):
+        self.sorted_batches = []  # Sorted by size
+
+    def add_batch(self, batch: List):
+        bisect.insort(self.sorted_batches, len(batch))  # Inserts in sorted order
+
+    def optimize(self, max_transaction_size=MAX_TRANSACTION_SIZE) -> float:
+        fees = 0
+        current_transaction_size = 0
+        current_transaction = Transaction()
+
+        for size in self.sorted_batches:
+            if current_transaction_size + size > max_transaction_size:
+                fees += current_transaction.fee
+                current_transaction = Transaction()
+
+            try:
+                current_transaction.add_batch(get_next_batch(size))  # Replace with actual implementation
+            except Exception as e:
+                logging.error(f"Error adding batch to transaction: {e}")
+                raise  # Reraise the exception for better debugging
+
+            current_transaction_size += size
+
+        fees += current_transaction.fee
+
+        return fees
+
+# The rest of the code (tests) remains unchanged.
